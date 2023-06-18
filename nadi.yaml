@@ -1,0 +1,21 @@
+###################### Nadi Configuration ##################################
+
+# This file is a configuration file for Nadi Shipper.
+#
+# You can find the full configuration reference here:
+# https://docs.nadi.pro/nadi-shipper
+
+# ============================== Nadi inputs ===============================
+
+nadi:
+  # Login to Nadi app and create your API Token from
+  apiKey:
+
+  # Create an application and copy the Application's token and paste it here.
+  token:
+
+  # Set path to Nadi logs. By default
+  storage: /var/log/nadi
+
+  # Set this to true if you want to maintain the Nadi log after sending them
+  persistent: false
