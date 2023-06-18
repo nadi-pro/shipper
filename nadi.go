@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"gopkg.in/yaml.v2"
@@ -72,12 +74,89 @@ func testApiConnectivity(config *Config) error {
 
 	// Print the response
 	fmt.Println("Response:", string(body))
-
-	// if connection ok. proceed with reading the files in given log storage
 	fmt.Println("HTTP Status Code:", resp.StatusCode)
 
 	return nil
 }
+
+func sendToRecordAPI(config *Config, payload []byte) error {
+	// Create an HTTP client with timeout
+	client := &http.Client{
+		Timeout: config.Nadi.Timeout,
+	}
+
+	// Create an HTTP request
+	req, err := http.NewRequest("POST", config.Nadi.Endpoint+"record", bytes.NewBuffer(payload))
+	if err != nil {
+		return err
+	}
+
+	// Set headers (if required)
+	req.Header.Set("Authorization", "Bearer "+config.Nadi.APIKey)
+	req.Header.Set("Nadi-Token", config.Nadi.Token)
+	req.Header.Set("Accept", "application/vnd.nadi.v1+json")
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send the HTTP request
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Read the response body
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	// Print the response
+	fmt.Println("Response:", string(body))
+	fmt.Println("HTTP Status Code:", resp.StatusCode)
+
+	return nil
+}
+
+func sendJSONFiles(config *Config) {
+	// Get the list of JSON files in the directory
+	files, err := ioutil.ReadDir(config.Nadi.Storage)
+	if err != nil {
+		fmt.Println("Error reading directory:", err)
+		return
+	}
+
+	// Iterate over the files
+	for _, file := range files {
+		if filepath.Ext(file.Name()) == ".json" {
+			filePath := filepath.Join(config.Nadi.Storage, file.Name())
+
+			// Read the content of the JSON file
+			content, err := ioutil.ReadFile(filePath)
+			if err != nil {
+				fmt.Println("Error reading file:", err)
+				continue
+			}
+
+			// Send the content to the API endpoint
+			err = sendToRecordAPI(config, content)
+			if err != nil {
+				fmt.Println("Error sending to API:", err)
+				continue
+			}
+
+			// Remove the JSON file
+			err = os.Remove(filePath)
+			if err != nil {
+				fmt.Println("Error removing file:", err)
+				continue
+			}
+
+			fmt.Println("JSON file processed:", filePath)
+		}
+	}
+}
+
+
 
 func main() {
 	// Parse command-line arguments
