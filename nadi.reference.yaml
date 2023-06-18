@@ -11,11 +11,14 @@ nadi:
   # Nadi API Endpoint
   endpoint: http://nadi.pro/api/
 
+  # Accept Header
+  accept: application/vnd.nadi.v1+json
+
   # Login to Nadi app and create your API Token from
   apiKey:
 
   # Create an application and copy the Application's token and paste it here.
-  token: 
+  token:
 
   # Set path to Nadi logs. By default the path is /var/log/nadi.
   storage: /var/log/nadi
