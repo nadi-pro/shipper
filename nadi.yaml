@@ -8,14 +8,23 @@
 # ============================== Nadi inputs ===============================
 
 nadi:
+  # Nadi API Endpoint
+  endpoint: http://nadi.pro/api/
+
   # Login to Nadi app and create your API Token from
   apiKey:
 
   # Create an application and copy the Application's token and paste it here.
-  token:
+  token: 
 
-  # Set path to Nadi logs. By default
+  # Set path to Nadi logs. By default the path is /var/log/nadi.
   storage: /var/log/nadi
 
-  # Set this to true if you want to maintain the Nadi log after sending them
+  # Set this to true if you want to maintain the Nadi log after sending them. Default is false.
   persistent: false
+
+  # Set maximum tries to send over the logs. Default is 3 times.
+  maxTries: 3
+
+  # Set maximum time before timeout. Default is 1 minute.
+  timeout: 1m
