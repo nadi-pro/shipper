@@ -107,17 +107,15 @@ func callAPIEndpoint(config *Config, endpoint string, payload []byte) error {
 		return err
 	}
 
-	// Check the response status code
-	if resp.StatusCode != http.StatusOK {
-		// Try to parse the response as an error message
-		var errorResponse ErrorResponse
-		err = json.Unmarshal(body, &errorResponse)
-		if err == nil && errorResponse.Message != "" {
-			return fmt.Errorf("API request failed with status code: %d, Response: %s", resp.StatusCode, errorResponse.Message)
-		}
+	var errorResponse ErrorResponse
+	err = json.Unmarshal(body, &errorResponse)
 
-		// Fallback to returning the raw response body
-		return fmt.Errorf("API request failed with status code: %d, Response: %s", resp.StatusCode, string(body))
+	// Check the response status code
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		fmt.Printf("API request failed with status code: %d abd message: %s", resp.StatusCode, errorResponse.Message)
+		return err
+	} else {
+		fmt.Printf("%s\n", errorResponse.Message)
 	}
 
 	return nil
@@ -154,7 +152,7 @@ func sendJSONFiles(config *Config) {
 	trackerMap := make(TrackerMap)
 
 	// Load the tracker data from a file (including creating the file if it doesn't exist)
-	trackerFilePath := filepath.Join(config.Nadi.Storage, config.Nadi.TrackerFile)
+	trackerFilePath := config.Nadi.TrackerFile
 	loadTrackerData(trackerFilePath, &trackerMap)
 
 	// Iterate over the files
@@ -272,8 +270,6 @@ func main() {
 	recordFlag := flag.Bool("record", false, "test API endpoint")
 	flag.Parse()
 
-	fmt.Println("Nadi Ship set sailing at " + time.Now().Format("2006-01-02 15:04:05"))
-
 	// Load the configuration from YAML
 	config, err := loadConfig(*configPath)
 	if err != nil {
@@ -284,20 +280,18 @@ func main() {
 	// Test the API endpoint if -test flag is provided
 	if *testFlag {
 		testAPIEndpoint(config)
-		return
+
 	}
 
 	// Verify the API endpoint if -verify flag is provided
 	if *verifyFlag {
 		verifyAPIEndpoint(config)
-		return
 	}
 
 	// Check for JSON files in the storage directory and send them to the record API
 	if *recordFlag {
+		fmt.Println("Nadi Ship set sailing at " + time.Now().Format("2006-01-02 15:04:05"))
 		sendJSONFiles(config)
-		return
+		fmt.Println("Nadi Ship successfully deliver the goods at " + time.Now().Format("2006-01-02 15:04:05"))
 	}
-
-	fmt.Println("Nadi Ship successfully deliver the goods at " + time.Now().Format("2006-01-02 15:04:05"))
 }
