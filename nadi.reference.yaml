@@ -23,6 +23,9 @@ nadi:
   # Set path to Nadi logs. By default the path is /var/log/nadi.
   storage: /var/log/nadi
 
+  # Set the Path for tracker.json
+  trackerFile: tracker.json
+
   # Set this to true if you want to maintain the Nadi log after sending them. Default is false.
   persistent: false
 

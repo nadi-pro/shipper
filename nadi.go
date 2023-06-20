@@ -18,23 +18,38 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// Config is a Nadi Shipper Configuration based on Yaml
 type Config struct {
 	Nadi struct {
-		Endpoint   string        `yaml:"endpoint"`
-		APIKey     string        `yaml:"apiKey"`
-		Token      string        `yaml:"token"`
-		Storage    string        `yaml:"storage"`
-		Persistent bool          `yaml:"persistent"`
-		MaxTries   int           `yaml:"maxTries"`
-		Timeout    time.Duration `yaml:"timeout"`
-		Accept     string        `yaml:"accept"`
+		Endpoint    string        `yaml:"endpoint"`
+		APIKey      string        `yaml:"apiKey"`
+		Token       string        `yaml:"token"`
+		Storage     string        `yaml:"storage"`
+		Persistent  bool          `yaml:"persistent"`
+		MaxTries    int           `yaml:"maxTries"`
+		Timeout     time.Duration `yaml:"timeout"`
+		Accept      string        `yaml:"accept"`
+		TrackerFile string        `yaml:"trackerFile"`
 	} `yaml:"nadi"`
 }
 
 type ErrorResponse struct {
 	Message string `json:"message"`
 }
+
+type FileStatus int
+
+const (
+	StatusPending FileStatus = iota
+	StatusSent
+	StatusFailed
+)
+
+type FileTracker struct {
+	Status FileStatus
+	Tries  int
+}
+
+type TrackerMap map[string]FileTracker
 
 func loadConfig(filename string) (*Config, error) {
 	// Read the YAML file
@@ -138,10 +153,22 @@ func sendJSONFiles(config *Config) {
 		return
 	}
 
+	// Create a tracker map to store the status of each file
+	trackerMap := make(TrackerMap)
+
+	// Load the tracker data from a file (including creating the file if it doesn't exist)
+	trackerFilePath := filepath.Join(config.Nadi.Storage, config.Nadi.TrackerFile)
+	loadTrackerData(trackerFilePath, &trackerMap)
+
 	// Iterate over the files
 	for _, file := range files {
 		if filepath.Ext(file.Name()) == ".json" {
 			filePath := filepath.Join(config.Nadi.Storage, file.Name())
+
+			// Check if the file is already sent or failed
+			if trackerMap[file.Name()].Status != StatusPending {
+				continue
+			}
 
 			// Read the JSON file content
 			content, err := ioutil.ReadFile(filePath)
@@ -154,8 +181,22 @@ func sendJSONFiles(config *Config) {
 			err = callAPIEndpoint(config, "record", content)
 			if err != nil {
 				fmt.Println("Error calling API:", err)
+				// Increment the number of tries for the file
+				tracker := trackerMap[file.Name()]
+				tracker.Tries++
+
+				// Mark the file as failed if max tries exceeded
+				if tracker.Tries > config.Nadi.MaxTries {
+					tracker.Status = StatusFailed
+				}
+				trackerMap[file.Name()] = tracker
 				continue
 			}
+
+			// Mark the file as sent
+			tracker := trackerMap[file.Name()]
+			tracker.Status = StatusSent
+			trackerMap[file.Name()] = tracker
 
 			// Remove the JSON file if not persistent
 			if !config.Nadi.Persistent {
@@ -166,19 +207,63 @@ func sendJSONFiles(config *Config) {
 			}
 		}
 	}
+
+	// Save the tracker data to a file
+	saveTrackerData(trackerFilePath, trackerMap)
 }
 
 func verifyAPIEndpoint(config *Config) {
 	err := callAPIEndpoint(config, "verify", nil)
 	if err != nil {
-		fmt.Println("Error calling API:", err)
+		fmt.Println("API verification failed:", err)
+		return
 	}
+
+	fmt.Println("API verification successful.")
 }
 
 func testAPIEndpoint(config *Config) {
 	err := callAPIEndpoint(config, "test", nil)
 	if err != nil {
-		fmt.Println("Error calling API:", err)
+		fmt.Println("Error calling test API:", err)
+		return
+	}
+
+	fmt.Println("Test API call successful.")
+}
+
+func loadTrackerData(filepath string, trackerMap *TrackerMap) {
+	data, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		// Create an empty tracker map if the file doesn't exist
+		if os.IsNotExist(err) {
+			*trackerMap = make(TrackerMap)
+			return
+		}
+
+		fmt.Println("Error loading tracker data:", err)
+		return
+	}
+
+	err = json.Unmarshal(data, trackerMap)
+	if err != nil {
+		fmt.Println("Error loading tracker data:", err)
+		*trackerMap = make(TrackerMap)
+	}
+}
+
+func saveTrackerData(filePath string, trackerMap TrackerMap) {
+	// Convert the tracker map to JSON
+	data, err := json.Marshal(trackerMap)
+	if err != nil {
+		fmt.Println("Error encoding tracker data:", err)
+		return
+	}
+
+	// Write the tracker data to a file
+	err = ioutil.WriteFile(filePath, data, 0644)
+	if err != nil {
+		fmt.Println("Error writing tracker file:", err)
 	}
 }
 
@@ -201,21 +286,13 @@ func main() {
 
 	// Test the API endpoint if -test flag is provided
 	if *testFlag {
-		err = callAPIEndpoint(config, "test", nil)
-		if err != nil {
-			fmt.Println("Error calling API endpoint:", err)
-			return
-		}
+		testAPIEndpoint(config)
 		return
 	}
 
 	// Verify the API endpoint if -verify flag is provided
 	if *verifyFlag {
-		err = verifyAPIEndpoint(config)
-		if err != nil {
-			fmt.Println("Error verifying API endpoint:", err)
-			return
-		}
+		verifyAPIEndpoint(config)
 		return
 	}
 
@@ -224,8 +301,6 @@ func main() {
 		sendJSONFiles(config)
 		return
 	}
-
-	fmt.Println(generateTransporterID())
 
 	fmt.Println("Nadi Ship successfully deliver the goods at " + time.Now().Format("2006-01-02 15:04:05"))
 }
