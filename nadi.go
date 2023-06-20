@@ -132,7 +132,7 @@ func generateTransporterID() string {
 
 func sendJSONFiles(config *Config) {
 	// Get the list of JSON files in the directory
-	files, err := os.ReadDir(config.Nadi.Storage)
+	files, err := ioutil.ReadDir(config.Nadi.Storage)
 	if err != nil {
 		fmt.Println("Error reading directory:", err)
 		return
@@ -143,38 +143,43 @@ func sendJSONFiles(config *Config) {
 		if filepath.Ext(file.Name()) == ".json" {
 			filePath := filepath.Join(config.Nadi.Storage, file.Name())
 
-			// Read the content of the JSON file
-			content, err := os.ReadFile(filePath)
+			// Read the JSON file content
+			content, err := ioutil.ReadFile(filePath)
 			if err != nil {
 				fmt.Println("Error reading file:", err)
 				continue
 			}
 
-			// Send the content to the API endpoint
-			err = sendToRecordAPI(config, content)
+			// Call the API endpoint with the JSON content
+			err = callAPIEndpoint(config, "record", content)
 			if err != nil {
-				fmt.Println("Error sending to API:", err)
+				fmt.Println("Error calling API:", err)
 				continue
 			}
 
-			// Remove the JSON file
-			err = os.Remove(filePath)
-			if err != nil {
-				fmt.Println("Error removing file:", err)
-				continue
+			// Remove the JSON file if not persistent
+			if !config.Nadi.Persistent {
+				err := os.Remove(filePath)
+				if err != nil {
+					fmt.Println("Error removing file:", err)
+				}
 			}
-
-			fmt.Println("JSON file processed:", filePath)
 		}
 	}
 }
 
-func sendToRecordAPI(config *Config, payload []byte) error {
-	return callAPIEndpoint(config, "record", payload)
+func verifyAPIEndpoint(config *Config) {
+	err := callAPIEndpoint(config, "verify", nil)
+	if err != nil {
+		fmt.Println("Error calling API:", err)
+	}
 }
 
-func verifyAPIEndpoint(config *Config) error {
-	return callAPIEndpoint(config, "verify", nil)
+func testAPIEndpoint(config *Config) {
+	err := callAPIEndpoint(config, "test", nil)
+	if err != nil {
+		fmt.Println("Error calling API:", err)
+	}
 }
 
 func main() {
