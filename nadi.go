@@ -120,9 +120,6 @@ func callAPIEndpoint(config *Config, endpoint string, payload []byte) error {
 		return fmt.Errorf("API request failed with status code: %d, Response: %s", resp.StatusCode, string(body))
 	}
 
-	// Print the response
-	fmt.Println("Response:", string(body))
-
 	return nil
 }
 
@@ -213,9 +210,9 @@ func sendJSONFiles(config *Config) {
 }
 
 func verifyAPIEndpoint(config *Config) {
-	err := callAPIEndpoint(config, "verify", nil)
+	err := callAPIEndpoint(config, "verify", []byte("{}"))
 	if err != nil {
-		fmt.Println("API verification failed:", err)
+		fmt.Println("API verification failed.")
 		return
 	}
 
@@ -223,13 +220,13 @@ func verifyAPIEndpoint(config *Config) {
 }
 
 func testAPIEndpoint(config *Config) {
-	err := callAPIEndpoint(config, "test", nil)
+	err := callAPIEndpoint(config, "test", []byte("{}"))
 	if err != nil {
-		fmt.Println("Error calling test API:", err)
+		fmt.Println("Connection to Nadi Failed.")
 		return
 	}
 
-	fmt.Println("Test API call successful.")
+	fmt.Println("Connection to Nadi successful.")
 }
 
 func loadTrackerData(filepath string, trackerMap *TrackerMap) {
