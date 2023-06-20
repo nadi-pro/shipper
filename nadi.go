@@ -32,6 +32,10 @@ type Config struct {
 	} `yaml:"nadi"`
 }
 
+type ErrorResponse struct {
+	Message string `json:"message"`
+}
+
 func loadConfig(filename string) (*Config, error) {
 	// Read the YAML file
 	data, err := ioutil.ReadFile(filename)
@@ -68,7 +72,7 @@ func callAPIEndpoint(config *Config, endpoint string, payload []byte) error {
 	req.Header.Set("Nadi-Token", config.Nadi.Token)
 	req.Header.Set("Nadi-Transporter-Id", generateTransporterID())
 
-	// Extract transporter ID from payload and add it to request headers
+	// Set Payload
 	var payloadData map[string]interface{}
 	err = json.Unmarshal(payload, &payloadData)
 	if err != nil {
@@ -86,6 +90,19 @@ func callAPIEndpoint(config *Config, endpoint string, payload []byte) error {
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
+	}
+
+	// Check the response status code
+	if resp.StatusCode != http.StatusOK {
+		// Try to parse the response as an error message
+		var errorResponse ErrorResponse
+		err = json.Unmarshal(body, &errorResponse)
+		if err == nil && errorResponse.Message != "" {
+			return fmt.Errorf("API request failed with status code: %d, Response: %s", resp.StatusCode, errorResponse.Message)
+		}
+
+		// Fallback to returning the raw response body
+		return fmt.Errorf("API request failed with status code: %d, Response: %s", resp.StatusCode, string(body))
 	}
 
 	// Print the response
