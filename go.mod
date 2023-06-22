@@ -1,4 +1,4 @@
-module cleaniquecoders/nadi-agent
+module nadi-pro/shipper
 
 go 1.20
 
