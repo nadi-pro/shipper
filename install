@@ -3,6 +3,26 @@
 GH_REPO="nadi-pro/shipper"
 TIMEOUT=90
 
+# Determine the operating system
+OS=$(uname -s)
+BINARY_PATH=""
+BINARY_DIRECTORY=""
+
+# Set the default binary path and directory based on the operating system
+if [ "${OS}" = "Linux" ]; then
+    BINARY_PATH="/usr/local/bin/shipper"
+    BINARY_DIRECTORY="/opt/shipper"
+elif [ "${OS}" = "Darwin" ]; then
+    BINARY_PATH="/usr/local/bin/shipper"
+    BINARY_DIRECTORY="/usr/local/shipper"
+else
+    echo "Unsupported operating system: ${OS}"
+    exit 1
+fi
+
+# Get the current logged-in user
+USERNAME=$USER
+
 set -e
 
 VERSION=$(curl --silent --location --max-time "${TIMEOUT}" "https://api.github.com/repos/${GH_REPO}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
@@ -60,19 +80,55 @@ curl --silent --location --max-time "${TIMEOUT}" "${LINK}" | tar zxf - || {
 
 mkdir -p /usr/local/bin || exit 2
 cp shipper /usr/local/bin/ || exit 2
-chmod 755 /usr/local/bin/shipper || exit 2
-case "$OS" in
-'linux')
-    chown root:root /usr/local/bin/shipper || exit 2
-    ;;
-'freebsd' | 'openbsd' | 'netbsd' | 'darwin')
-    chown root:wheel /usr/local/bin/shipper || exit 2
-    ;;
-*)
-    echo 'OS not supported'
-    exit 2
-    ;;
-esac
+chmod 755 "${BINARY_PATH}" || exit 2
+chown "${USERNAME}:${USERNAME}" "${BINARY_PATH}" || exit 2
 
 rm -rf "$tmp_dir"
-echo "Installed successfully to /usr/local/bin/shipper"
+echo "Installed successfully to ${BINARY_PATH}"
+
+# Prompt the user to confirm the installation of the service
+read -r -p "Do you want to install the Shipper service? (y/n): " INSTALL_SERVICE
+
+# If the user confirms, create and install the Systemd unit file
+if [ "${INSTALL_SERVICE}" = "y" ] || [ "${INSTALL_SERVICE}" = "Y" ]; then
+    # Check if nadi.yaml exists
+    if [ ! -f "${BINARY_DIRECTORY}/nadi.yaml" ]; then
+        # Download nadi.reference.yaml from GitHub
+        wget -O "${BINARY_DIRECTORY}/nadi.yaml" "https://github.com/nadi-pro/shipper/raw/master/nadi.reference.yaml"
+        echo "Downloaded nadi.reference.yaml and saved as nadi.yaml."
+    fi
+
+    # Check if nadi.yaml exists after copying
+    if [ ! -f "${BINARY_DIRECTORY}/nadi.yaml" ]; then
+        echo "nadi.yaml file not found. Service installation cannot continue."
+        exit 1
+    fi
+
+    # Create a Systemd unit file
+    cat << EOF > shipper.service
+[Unit]
+Description=Shipper Service
+After=network.target
+
+[Service]
+ExecStart=${BINARY_PATH} --config=${BINARY_DIRECTORY}/nadi.yaml
+WorkingDirectory=${BINARY_DIRECTORY}
+Restart=always
+User=${USERNAME}
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    # Move the unit file to the Systemd service directory
+    sudo mv shipper.service /etc/systemd/system/
+
+    # Enable and start the service
+    sudo systemctl enable shipper.service
+    sudo systemctl start shipper.service
+
+    echo "Shipper service has been installed and started."
+else
+    echo "Shipper service installation cancelled."
+fi
+
