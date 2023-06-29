@@ -1,8 +1,15 @@
 #!/bin/bash
 
 # Set the package name and version
-PACKAGE_NAME="Nadi-Shipper"
-VERSION="1.0.0"
+if [ ! "$PACKAGE_NAME" ]; then
+    echo -ne "\nMissing Package Name.\n"
+    exit 1
+fi
+
+if [ ! "$PACKAGE_VERSION" ]; then
+    echo -ne "\nMissing Package Version.\n"
+    exit 1
+fi
 
 # Define the target operating systems and architectures with file extensions
 TARGETS=(
@@ -31,21 +38,18 @@ for target in "${TARGETS[@]}"; do
 
   # Build the package
   echo "Building for $GOOS/$GOARCH..."
-  file_name="${PACKAGE_NAME}_${VERSION}_${GOOS}_${GOARCH}"
-  file_name_title_case="$(echo "$file_name" | tr '[:lower:]' '[:upper:]')"
-  output_file="$OUTPUT_DIR/$file_name_title_case.$file_extension"
+  file_name="${PACKAGE_NAME}-${PACKAGE_VERSION}-${GOOS}-${GOARCH}"
+  output_file="$OUTPUT_DIR/$file_name"
 
-  # Build the package with the appropriate file extension
-  case "$file_extension" in
-    "tar.gz")
-      go build -o "$output_file" .
-      ;;
-    "zip")
-      go build -o "$output_file" .
-      zip -j "$output_file" "$output_file"
-      ;;
-    *)
-      echo "Unsupported file extension: $file_extension"
-      ;;
-  esac
+  if [ $GOOS = "windows" ]; then
+        output_zip="${output_file}"
+        output_file+='.exe'
+        GOOS=$GOOS GOARCH=$GOARCH go build -o "${output_file}"
+        zip -m "${output_zip}.zip" "${output_file}"
+    else
+        GOOS=$GOOS GOARCH=$GOARCH go build -o "${output_file}"
+        tar -czvf "${output_file}.tar.gz" "${output_file}"
+    fi
+
+    rm "${output_file}"
 done
