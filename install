@@ -78,7 +78,7 @@ curl --silent --location --max-time "${TIMEOUT}" "${LINK}" | tar zxf - || {
     exit 2
 }
 
-mkdir -p /usr/local/bin || exit 2
+mkdir -p "${BINARY_DIRECTORY}" || exit 2
 cp shipper /usr/local/bin/ || exit 2
 chmod 755 /usr/local/bin/shipper || exit 2
 case "$OS" in
@@ -94,29 +94,14 @@ case "$OS" in
     ;;
 esac
 
+wget -O "${BINARY_DIRECTORY}/nadi.yaml" "https://github.com/nadi-pro/shipper/raw/master/nadi.reference.yaml"
+echo "Downloaded nadi.reference.yaml and saved as ${BINARY_DIRECTORY}/nadi.yaml."
+
 rm -rf "$tmp_dir"
 echo "Installed successfully to ${BINARY_PATH}"
 
-# Prompt the user to confirm the installation of the service
-read -r -p "Do you want to install the Shipper service? (y/n): " INSTALL_SERVICE
-
-# If the user confirms, create and install the Systemd unit file
-if [ "${INSTALL_SERVICE}" = "y" ] || [ "${INSTALL_SERVICE}" = "Y" ]; then
-    # Check if nadi.yaml exists
-    if [ ! -f "${BINARY_DIRECTORY}/nadi.yaml" ]; then
-        # Download nadi.reference.yaml from GitHub
-        wget -O "${BINARY_DIRECTORY}/nadi.yaml" "https://github.com/nadi-pro/shipper/raw/master/nadi.reference.yaml"
-        echo "Downloaded nadi.reference.yaml and saved as nadi.yaml."
-    fi
-
-    # Check if nadi.yaml exists after copying
-    if [ ! -f "${BINARY_DIRECTORY}/nadi.yaml" ]; then
-        echo "nadi.yaml file not found. Service installation cannot continue."
-        exit 1
-    fi
-
-    # Create a Systemd unit file
-    cat << EOF > shipper.service
+# Create a Systemd unit file
+cat <<EOF >shipper.service
 [Unit]
 Description=Shipper Service
 After=network.target
@@ -131,15 +116,11 @@ User=${USERNAME}
 WantedBy=multi-user.target
 EOF
 
-    # Move the unit file to the Systemd service directory
-    sudo mv shipper.service /etc/systemd/system/
+# Move the unit file to the Systemd service directory
+sudo mv shipper.service /etc/systemd/system/
 
-    # Enable and start the service
-    sudo systemctl enable shipper.service
-    sudo systemctl start shipper.service
+# Enable and start the service
+echo "Run sudo systemctl enable shipper.service to enable shipper to start on reboot"
+echo "Run sudo systemctl start shipper.service to run the service"
 
-    echo "Shipper service has been installed and started."
-else
-    echo "Shipper service installation cancelled."
-fi
-
+echo "Shipper service has been installed."
