@@ -100,10 +100,10 @@ rm -rf "${TMP_DIR}"
 echo "Installed successfully to ${BINARY_PATH}/shipper"
 
 # Create a Systemd unit file
-SERVICE_DIRECTORY="/etc/systemd/system/"
+SERVICE_DIRECTORY="/etc/systemd/system/shipper.service"
 case "$OS" in
 'darwin')
-    SERVICE_DIRECTORY="/Library/LaunchDaemons/" || exit 2
+    SERVICE_DIRECTORY="/Library/LaunchDaemons/shipper.plist" || exit 2
     ;;
 *)
     echo 'OS not supported'
@@ -111,7 +111,40 @@ case "$OS" in
     ;;
 esac
 
-sudo tee "${SERVICE_DIRECTORY}shipper.service" > /dev/null <<EOF
+if [[ "$OS" == "darwin" ]]; then
+    # macOS
+    PLIST_PATH="/Library/LaunchDaemons/nadi.shipper.plist"
+
+    # Create the plist file
+    sudo tee "$PLIST_PATH" >/dev/null <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.nadi.shipper</string>
+    <key>Description</key>
+    <string>Nadi Shipper Service</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>${BINARY_PATH}</string>
+        <string>--config=${BINARY_DIRECTORY}/nadi.yaml</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>${BINARY_DIRECTORY}</string>
+    <key>KeepAlive</key>
+    <true/>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>UserName</key>
+    <string>${USERNAME}</string>
+</dict>
+</plist>
+EOF
+    echo "Run sudo launchctl load ${PLIST_PATH} to load the service on startup."
+else
+
+    sudo tee "${SERVICE_DIRECTORY}nadi.shipper.service" >/dev/null <<EOF
 [Unit]
 Description=Shipper Service
 After=network.target
@@ -126,8 +159,10 @@ User=${USERNAME}
 WantedBy=multi-user.target
 EOF
 
-# Enable and start the service
-echo "Run sudo systemctl enable shipper.service to enable shipper to start on reboot"
-echo "Run sudo systemctl start shipper.service to run the service"
+    # Enable and start the service
+    echo "Run sudo systemctl enable nadi.shipper.service to enable shipper to start on startup."
+    echo "Run sudo systemctl start nadi.shipper.service to start the service."
+
+fi
 
 echo "Shipper service has been installed."
