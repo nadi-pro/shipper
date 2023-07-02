@@ -65,8 +65,9 @@ esac
 GH_REPO_BIN="shipper-${VERSION}-${OS}-${OS_type}.tar.gz"
 
 #create tmp directory and move to it with macOS compatibility fallback
-tmp_dir=$(mktemp -d 2>/dev/null || mktemp -d -t 'shipper-install.XXXXXXXXXX')
-cd "$tmp_dir"
+TMP_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'shipper-install.XXXXXXXXXX')
+echo "Change to temporary directory ${TMP_DIR}"
+cd "$TMP_DIR"
 
 echo "Downloading shipper $VERSION"
 LINK="https://github.com/${GH_REPO}/releases/download/${VERSION}/${GH_REPO_BIN}"
@@ -95,8 +96,8 @@ mkdir -p "${BINARY_DIRECTORY}" || exit 2
 wget -O "${BINARY_DIRECTORY}/nadi.yaml" "https://raw.githubusercontent.com/nadi-pro/shipper/master/nadi.reference.yaml"
 echo "Downloaded nadi.reference.yaml and saved as ${BINARY_DIRECTORY}/nadi.yaml."
 
-rm -rf "$tmp_dir"
-echo "Installed successfully to ${BINARY_PATH}"
+rm -rf "${TMP_DIR}"
+echo "Installed successfully to ${BINARY_PATH}/shipper"
 
 # Create a Systemd unit file
 SERVICE_DIRECTORY="/etc/systemd/system/"
