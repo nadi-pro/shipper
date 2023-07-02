@@ -92,7 +92,7 @@ case "$OS" in
 esac
 
 mkdir -p "${BINARY_DIRECTORY}" || exit 2
-wget -O "${BINARY_DIRECTORY}/nadi.yaml" "https://github.com/nadi-pro/shipper/raw/master/nadi.reference.yaml"
+wget -O "${BINARY_DIRECTORY}/nadi.yaml" "https://raw.githubusercontent.com/nadi-pro/shipper/master/nadi.reference.yaml"
 echo "Downloaded nadi.reference.yaml and saved as ${BINARY_DIRECTORY}/nadi.yaml."
 
 rm -rf "$tmp_dir"

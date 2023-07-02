@@ -10,7 +10,7 @@ To download and install Filebeat, use the commands that work with your system:
 
 ### Install via bash script (Linux & Mac)
 
-Linux & Mac users can install it directly to `/usr/local/bin/mailpit` with:
+Linux & Mac users can install it directly to `/usr/local/bin/shipper` with:
 
 ```bash
 sudo bash < <(curl -sL https://raw.githubusercontent.com/nadi-pro/shipper/master/install)
