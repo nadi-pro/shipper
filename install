@@ -110,7 +110,7 @@ case "$OS" in
     ;;
 esac
 
-sudo tee "${SERVICE_DIRECTORY}/shipper.service" > /dev/null <<EOF
+sudo tee "${SERVICE_DIRECTORY}shipper.service" > /dev/null <<EOF
 [Unit]
 Description=Shipper Service
 After=network.target
