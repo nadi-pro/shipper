@@ -116,8 +116,19 @@ User=${USERNAME}
 WantedBy=multi-user.target
 EOF
 
+SERVICE_DIRECTORY="/etc/systemd/system/"
+case "$OS" in
+'darwin')
+    SERVICE_DIRECTORY="/Library/LaunchDaemons/" || exit 2
+    ;;
+*)
+    echo 'OS not supported'
+    exit 2
+    ;;
+esac
+
 # Move the unit file to the Systemd service directory
-sudo mv shipper.service /etc/systemd/system/
+sudo mv shipper.service "$SERVICE_DIRECTORY}"
 
 # Enable and start the service
 echo "Run sudo systemctl enable shipper.service to enable shipper to start on reboot"
