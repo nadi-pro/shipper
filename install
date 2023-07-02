@@ -101,6 +101,7 @@ rm -rf "$tmp_dir"
 echo "Installed successfully to ${BINARY_PATH}"
 
 # Create a Systemd unit file
+touch shipper.service
 cat <<EOF >shipper.service
 [Unit]
 Description=Shipper Service
