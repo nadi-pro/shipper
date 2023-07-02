@@ -99,8 +99,18 @@ rm -rf "$tmp_dir"
 echo "Installed successfully to ${BINARY_PATH}"
 
 # Create a Systemd unit file
-touch shipper.service
-cat <<EOF >shipper.service
+SERVICE_DIRECTORY="/etc/systemd/system/"
+case "$OS" in
+'darwin')
+    SERVICE_DIRECTORY="/Library/LaunchDaemons/" || exit 2
+    ;;
+*)
+    echo 'OS not supported'
+    exit 2
+    ;;
+esac
+
+sudo tee "${SERVICE_DIRECTORY}/shipper.service" > /dev/null <<EOF
 [Unit]
 Description=Shipper Service
 After=network.target
@@ -114,20 +124,6 @@ User=${USERNAME}
 [Install]
 WantedBy=multi-user.target
 EOF
-
-SERVICE_DIRECTORY="/etc/systemd/system/"
-case "$OS" in
-'darwin')
-    SERVICE_DIRECTORY="/Library/LaunchDaemons/" || exit 2
-    ;;
-*)
-    echo 'OS not supported'
-    exit 2
-    ;;
-esac
-
-# Move the unit file to the Systemd service directory
-sudo mv shipper.service "$SERVICE_DIRECTORY}"
 
 # Enable and start the service
 echo "Run sudo systemctl enable shipper.service to enable shipper to start on reboot"
