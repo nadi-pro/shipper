@@ -129,6 +129,7 @@ if [[ "$OS" == "darwin" ]]; then
     <array>
         <string>${BINARY_PATH}</string>
         <string>--config=${BINARY_DIRECTORY}/nadi.yaml</string>
+        <string>--record</string>
     </array>
     <key>WorkingDirectory</key>
     <string>${BINARY_DIRECTORY}</string>
@@ -150,7 +151,7 @@ Description=Shipper Service
 After=network.target
 
 [Service]
-ExecStart=${BINARY_PATH} --config=${BINARY_DIRECTORY}/nadi.yaml
+ExecStart=${BINARY_PATH} --config=${BINARY_DIRECTORY}/nadi.yaml --record
 WorkingDirectory=${BINARY_DIRECTORY}
 Restart=always
 User=${USERNAME}
