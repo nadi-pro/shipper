@@ -159,6 +159,7 @@ func sendJSONFiles(config *Config) {
 
 		// Flag to track if there are pending files
 		pendingFiles := false
+
 		fmt.Println("Nadi Ship set sailing at " + time.Now().Format("2006-01-02 15:04:05"))
 
 		// Iterate over the files
@@ -211,6 +212,8 @@ func sendJSONFiles(config *Config) {
 			}
 		}
 
+		fmt.Println("Nadi Ship successfully deliver the goods at " + time.Now().Format("2006-01-02 15:04:05"))
+
 		// Save the tracker data to a file
 		saveTrackerData(trackerFilePath, trackerMap)
 
@@ -218,8 +221,6 @@ func sendJSONFiles(config *Config) {
 		if !pendingFiles {
 			break
 		}
-
-		fmt.Println("Nadi Ship successfully deliver the goods at " + time.Now().Format("2006-01-02 15:04:05"))
 
 		time.Sleep(config.Nadi.CheckInterval)
 	}
