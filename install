@@ -10,9 +10,9 @@ BINARY_DIRECTORY=""
 
 # Set the default binary path and directory based on the operating system
 if [ "${OS}" = "Linux" ]; then
-    BINARY_DIRECTORY="/opt/shipper"
+    BINARY_DIRECTORY="/opt/nadi-pro/shipper"
 elif [ "${OS}" = "Darwin" ]; then
-    BINARY_DIRECTORY="/usr/local/shipper"
+    BINARY_DIRECTORY="/usr/local/nadi-pro/shipper"
 else
     echo "Unsupported operating system: ${OS}"
     exit 1
