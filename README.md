@@ -18,7 +18,10 @@ sudo bash < <(curl -sL https://raw.githubusercontent.com/nadi-pro/shipper/master
 
 ### Download static binary (Windows, Linux and Mac)
 
-Static binaries can always be found on the [releases](https://github.com/nadi-pro/shipper/releases/latest). The `shipper` binary can extracted and copied to your `$PATH`, or simply run as `./shipper`.
+Run the following command which will download latest version and configure default configuration for Windows.
+```batch
+powershell -command "(New-Object Net.WebClient).DownloadFile('https://raw.githubusercontent.com/nadi-pro/shipper/master/install.bat', '%TEMP%\install.bat') && %TEMP%\install.bat && del %TEMP%\install.bat"
+```
 
 ### Configuring Nadi
 
