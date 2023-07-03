@@ -34,3 +34,6 @@ nadi:
 
   # Set maximum time before timeout. Default is 1 minute.
   timeout: 1m
+
+  # Set time interval to check on new logs.
+  checkInterval: 5s
