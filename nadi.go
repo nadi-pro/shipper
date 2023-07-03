@@ -112,7 +112,7 @@ func callAPIEndpoint(config *Config, endpoint string, payload []byte) error {
 
 	// Check the response status code
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		fmt.Printf("API request failed with status code: %d abd message: %s", resp.StatusCode, errorResponse.Message)
+		fmt.Printf("API request failed with status code: %d and message: %s", resp.StatusCode, errorResponse.Message)
 		return err
 	} else {
 		fmt.Printf("%s\n", errorResponse.Message)
