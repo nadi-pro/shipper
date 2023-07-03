@@ -12,7 +12,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 	"time"
 
 	"gopkg.in/yaml.v2"
@@ -141,88 +143,90 @@ func generateTransporterID() string {
 	return sha1HashString
 }
 
-func sendJSONFiles(config *Config) {
+func sendJSONFiles(config *Config, signals <-chan os.Signal) {
+
 	for {
-		// Get the list of JSON files in the directory
-		files, err := ioutil.ReadDir(config.Nadi.Storage)
-		if err != nil {
-			fmt.Println("Error reading directory:", err)
-			return
-		}
-
-		// Create a tracker map to store the status of each file
-		trackerMap := make(TrackerMap)
-
-		// Load the tracker data from a file (including creating the file if it doesn't exist)
-		trackerFilePath := config.Nadi.TrackerFile
-		loadTrackerData(trackerFilePath, &trackerMap)
-
-		// Flag to track if there are pending files
-		pendingFiles := false
-
-		fmt.Println("Nadi Ship set sailing at " + time.Now().Format("2006-01-02 15:04:05"))
-
-		// Iterate over the files
-		for _, file := range files {
-			if filepath.Ext(file.Name()) == ".json" {
-				filePath := filepath.Join(config.Nadi.Storage, file.Name())
-
-				// Check if the file is already sent or failed
-				if trackerMap[file.Name()].Status != StatusPending {
-					continue
-				}
-
-				// Read the JSON file content
-				content, err := ioutil.ReadFile(filePath)
-				if err != nil {
-					fmt.Println("Error reading file:", err)
-					continue
-				}
-
-				// Call the API endpoint with the JSON content
-				err = callAPIEndpoint(config, "record", content)
-				if err != nil {
-					fmt.Println("Error calling API:", err)
-					// Increment the number of tries for the file
-					tracker := trackerMap[file.Name()]
-					tracker.Tries++
-
-					// Mark the file as failed if max tries exceeded
-					if tracker.Tries > config.Nadi.MaxTries {
-						tracker.Status = StatusFailed
-					}
-					trackerMap[file.Name()] = tracker
-					continue
-				}
-
-				// Mark the file as sent
-				tracker := trackerMap[file.Name()]
-				tracker.Status = StatusSent
-				trackerMap[file.Name()] = tracker
-
-				// Remove the JSON file if not persistent
-				if !config.Nadi.Persistent {
-					err := os.Remove(filePath)
-					if err != nil {
-						fmt.Println("Error removing file:", err)
-					}
-				}
-
-				pendingFiles = true
+		select {
+		case <-signals:
+			os.Exit(0)
+		default:
+			// Get the list of JSON files in the directory
+			files, err := ioutil.ReadDir(config.Nadi.Storage)
+			if err != nil {
+				fmt.Println("Error reading directory:", err)
+				return
 			}
+
+			// Create a tracker map to store the status of each file
+			trackerMap := make(TrackerMap)
+
+			// Load the tracker data from a file (including creating the file if it doesn't exist)
+			trackerFilePath := config.Nadi.TrackerFile
+			loadTrackerData(trackerFilePath, &trackerMap)
+
+			// Flag to track if there are pending files
+			pendingFiles := false
+
+			// Iterate over the files
+			for _, file := range files {
+				if filepath.Ext(file.Name()) == ".json" {
+					filePath := filepath.Join(config.Nadi.Storage, file.Name())
+
+					// Check if the file is already sent or failed
+					if trackerMap[file.Name()].Status != StatusPending {
+						continue
+					}
+
+					// Read the JSON file content
+					content, err := ioutil.ReadFile(filePath)
+					if err != nil {
+						fmt.Println("Error reading file:", err)
+						continue
+					}
+
+					// Call the API endpoint with the JSON content
+					err = callAPIEndpoint(config, "record", content)
+					if err != nil {
+						fmt.Println("Error calling API:", err)
+						// Increment the number of tries for the file
+						tracker := trackerMap[file.Name()]
+						tracker.Tries++
+
+						// Mark the file as failed if max tries exceeded
+						if tracker.Tries > config.Nadi.MaxTries {
+							tracker.Status = StatusFailed
+						}
+						trackerMap[file.Name()] = tracker
+						continue
+					}
+
+					// Mark the file as sent
+					tracker := trackerMap[file.Name()]
+					tracker.Status = StatusSent
+					trackerMap[file.Name()] = tracker
+
+					// Remove the JSON file if not persistent
+					if !config.Nadi.Persistent {
+						err := os.Remove(filePath)
+						if err != nil {
+							fmt.Println("Error removing file:", err)
+						}
+					}
+
+					pendingFiles = true
+				}
+			}
+
+			// Save the tracker data to a file
+			saveTrackerData(trackerFilePath, trackerMap)
+
+			// If there are no pending files, exit the loop
+			if !pendingFiles {
+				break
+			}
+
+			time.Sleep(config.Nadi.CheckInterval)
 		}
-
-		fmt.Println("Nadi Ship successfully deliver the goods at " + time.Now().Format("2006-01-02 15:04:05"))
-
-		// Save the tracker data to a file
-		saveTrackerData(trackerFilePath, trackerMap)
-
-		// If there are no pending files, exit the loop
-		if !pendingFiles {
-			break
-		}
-
-		time.Sleep(config.Nadi.CheckInterval)
 	}
 }
 
@@ -309,6 +313,10 @@ func main() {
 
 	// Check for JSON files in the storage directory and send them to the record API
 	if *recordFlag {
-		sendJSONFiles(config)
+		// Set up a channel to receive termination signals
+		signals := make(chan os.Signal, 1)
+		signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+
+		sendJSONFiles(config, signals)
 	}
 }
