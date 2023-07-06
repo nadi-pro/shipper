@@ -20,7 +20,7 @@ sudo bash < <(curl -sL https://raw.githubusercontent.com/nadi-pro/shipper/master
 
 Run the following command which will download latest version and configure default configuration for Windows.
 ```batch
-powershell -command "(New-Object Net.WebClient).DownloadFile('https://raw.githubusercontent.com/nadi-pro/shipper/master/install.ps1', '%TEMP%\install.ps1') && %TEMP%\install.bat && del %TEMP%\install.bat"
+powershell -command "(New-Object Net.WebClient).DownloadFile('https://raw.githubusercontent.com/nadi-pro/shipper/master/install.ps1', '%TEMP%\install.ps1') && %TEMP%\install.ps1 && del %TEMP%\install.ps1"
 ```
 
 ### Configuring Nadi
