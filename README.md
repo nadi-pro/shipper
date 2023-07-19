@@ -6,7 +6,7 @@ Nadi Shipper is a super lightweight log shipper for Nadi app, which transport al
 
 Install Shipper on all the servers you want to monitor.
 
-To download and install Filebeat, use the commands that work with your system:
+To download and install Shipper, use the commands that work with your system:
 
 ### Install via bash script (Linux & Mac)
 
