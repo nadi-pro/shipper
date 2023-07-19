@@ -91,7 +91,7 @@ func callAPIEndpoint(config *Config, endpoint string, payload []byte) error {
 	req.Header.Set("Nadi-Transporter-Id", generateTransporterID())
 
 	// Set Payload
-	var payloadData map[string]interface{}
+	var payloadData []map[string]interface{}
 	err = json.Unmarshal(payload, &payloadData)
 	if err != nil {
 		return err
