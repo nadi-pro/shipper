@@ -84,10 +84,10 @@ func callAPIEndpoint(config *Config, endpoint string, payload []byte) error {
 	}
 
 	// Set headers
-	req.Header.Set("Authorization", "Bearer "+config.Nadi.APIKey)
 	req.Header.Set("Accept", config.Nadi.Accept)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Nadi-Token", config.Nadi.Token)
+	req.Header.Set("Nadi-Api-Key", config.Nadi.APIKey)
+	req.Header.Set("Nadi-App-Token", config.Nadi.Token)
 	req.Header.Set("Nadi-Transporter-Id", generateTransporterID())
 
 	// Set Payload
@@ -303,7 +303,6 @@ func main() {
 	// Test the API endpoint if -test flag is provided
 	if *testFlag {
 		testAPIEndpoint(config)
-
 	}
 
 	// Verify the API endpoint if -verify flag is provided
