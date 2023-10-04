@@ -109,7 +109,7 @@ func callAPIEndpoint(config *Config, endpoint string, payload []byte) error {
 	if err != nil {
 		return err
 	}
-
+	
 	var errorResponse ErrorResponse
 	err = json.Unmarshal(body, &errorResponse)
 
@@ -233,21 +233,21 @@ func sendJSONFiles(config *Config, signals <-chan os.Signal) {
 func verifyAPIEndpoint(config *Config) {
 	err := callAPIEndpoint(config, "verify", []byte("{}"))
 	if err != nil {
-		fmt.Println("API verification failed.")
+		fmt.Println("Nadi Collector Verification Failed." + err.Error())
 		return
 	}
 
-	fmt.Println("API verification successful.")
+	fmt.Println("Nadi Collector Verification Successful.")
 }
 
 func testAPIEndpoint(config *Config) {
 	err := callAPIEndpoint(config, "test", []byte("{}"))
 	if err != nil {
-		fmt.Println("Connection to Nadi Failed.")
+		fmt.Println("Connection to Nadi Collector Failed. " + err.Error())
 		return
 	}
 
-	fmt.Println("Connection to Nadi successful.")
+	fmt.Println("Connection to Nadi Collector successful.")
 }
 
 func loadTrackerData(filepath string, trackerMap *TrackerMap) {
@@ -287,10 +287,10 @@ func saveTrackerData(filePath string, trackerMap TrackerMap) {
 
 func main() {
 	// Parse command-line arguments
-	configPath := flag.String("config", "nadi.yaml", "path to config file")
-	verifyFlag := flag.Bool("verify", false, "verify API endpoint")
-	testFlag := flag.Bool("test", false, "test API endpoint")
-	recordFlag := flag.Bool("record", false, "test API endpoint")
+	configPath := flag.String("config", "nadi.yaml", "Path to Nadi Shipper Configuration")
+	verifyFlag := flag.Bool("verify", false, "Verify Shipper Configuration")
+	testFlag := flag.Bool("test", false, "Test Nadi Collector Connectivity")
+	recordFlag := flag.Bool("record", false, "Send logs to Nadi Collector")
 	flag.Parse()
 
 	// Load the configuration from YAML
