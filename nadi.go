@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"os/signal"
@@ -56,7 +56,7 @@ type TrackerMap map[string]FileTracker
 
 func loadConfig(filename string) (*Config, error) {
 	// Read the YAML file
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -84,9 +84,9 @@ func callAPIEndpoint(config *Config, endpoint string, payload []byte) error {
 	}
 
 	// Set headers
+	req.Header.Set("Authorization", "Bearer "+config.Nadi.APIKey)
 	req.Header.Set("Accept", config.Nadi.Accept)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Nadi-Api-Key", config.Nadi.APIKey)
 	req.Header.Set("Nadi-App-Token", config.Nadi.Token)
 	req.Header.Set("Nadi-Transporter-Id", generateTransporterID())
 
@@ -105,11 +105,11 @@ func callAPIEndpoint(config *Config, endpoint string, payload []byte) error {
 	defer resp.Body.Close()
 
 	// Read the response body
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
-	
+
 	var errorResponse ErrorResponse
 	err = json.Unmarshal(body, &errorResponse)
 
@@ -151,7 +151,7 @@ func sendJSONFiles(config *Config, signals <-chan os.Signal) {
 			os.Exit(0)
 		default:
 			// Get the list of JSON files in the directory
-			files, err := ioutil.ReadDir(config.Nadi.Storage)
+			files, err := os.ReadDir(config.Nadi.Storage)
 			if err != nil {
 				fmt.Println("Error reading directory:", err)
 				return
@@ -178,7 +178,7 @@ func sendJSONFiles(config *Config, signals <-chan os.Signal) {
 					}
 
 					// Read the JSON file content
-					content, err := ioutil.ReadFile(filePath)
+					content, err := os.ReadFile(filePath)
 					if err != nil {
 						fmt.Println("Error reading file:", err)
 						continue
@@ -231,27 +231,23 @@ func sendJSONFiles(config *Config, signals <-chan os.Signal) {
 }
 
 func verifyAPIEndpoint(config *Config) {
-	err := callAPIEndpoint(config, "verify", []byte("{}"))
+	err := callAPIEndpoint(config, "verify", []byte("[]"))
 	if err != nil {
 		fmt.Println("Nadi Collector Verification Failed." + err.Error())
 		return
 	}
-
-	fmt.Println("Nadi Collector Verification Successful.")
 }
 
 func testAPIEndpoint(config *Config) {
-	err := callAPIEndpoint(config, "test", []byte("{}"))
+	err := callAPIEndpoint(config, "test", []byte("[]"))
 	if err != nil {
 		fmt.Println("Connection to Nadi Collector Failed. " + err.Error())
 		return
 	}
-
-	fmt.Println("Connection to Nadi Collector successful.")
 }
 
 func loadTrackerData(filepath string, trackerMap *TrackerMap) {
-	data, err := ioutil.ReadFile(filepath)
+	data, err := os.ReadFile(filepath)
 	if err != nil {
 		// Create an empty tracker map if the file doesn't exist
 		if os.IsNotExist(err) {
@@ -279,7 +275,7 @@ func saveTrackerData(filePath string, trackerMap TrackerMap) {
 	}
 
 	// Write the tracker data to a file
-	err = ioutil.WriteFile(filePath, data, 0644)
+	err = os.WriteFile(filePath, data, 0644)
 	if err != nil {
 		fmt.Println("Error writing tracker file:", err)
 	}
