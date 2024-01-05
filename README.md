@@ -19,49 +19,49 @@ sudo bash < <(curl -sL https://raw.githubusercontent.com/nadi-pro/shipper/master
 ### Download static binary (Windows, Linux and Mac)
 
 Run the following command which will download latest version and configure default configuration for Windows.
+
 ```batch
 powershell -command "(New-Object Net.WebClient).DownloadFile('https://raw.githubusercontent.com/nadi-pro/shipper/master/install.ps1', '%TEMP%\install.ps1') && %TEMP%\install.ps1 && del %TEMP%\install.ps1"
 ```
 
 ### Configuring Nadi
 
-Duplicate [nadi.reference.yaml](nadi.reference.yaml) to `nadi.yaml` and update the respective values:
+Duplicate [nadi.reference.yaml](nadi.reference.yaml) to `nadi.yaml` and update the following values:
 
-```yaml
-###################### Nadi Configuration ##################################
+- `apiKey` - Login to Nadi app and create your API Token
+- `token` - Create an application and copy the Application's token
+- `storage` - Set path to Nadi logs
 
-# This file is a configuration file for Nadi Shipper.
-#
-# You can find the full configuration reference here:
-# https://docs.nadi.pro/nadi-shipper
+Then you can test the connection to Nadi:
 
-# ============================== Nadi inputs ===============================
+```bash
+$ shipper --test
+```
 
-nadi:
-  # Nadi API Endpoint
-  endpoint: http://nadi.pro/api/
+In case of monitoring multiple applications, you need to create custom `nadi.yaml` for each of the application.
 
-  # Accept Header
-  accept: application/vnd.nadi.v1+json
+By default, Nadi Shipper will run as a service.
 
-  # Login to Nadi app and create your API Token from
-  apiKey:
+But you may use Supervisord to run multiple workers to monitor your applications in a single server.
 
-  # Create an application and copy the Application's token and paste it here.
-  token:
+Sample supervisord setup:
 
-  # Set path to Nadi logs. By default the path is /var/log/nadi.
-  storage: /var/log/nadi
+```ini
+[program:shipper-app1]
+process_name=%(program_name)s
+command=/usr/local/bin/shipper --config=/path/to/shipper/config/nadi-app1.yaml --record
+autostart=true
+autorestart=true
+redirect_stderr=true
+stdout_logfile=/var/log/nadi/nadi-app1.log
+stopwaitsecs=3600
 
-  # Set the Path for tracker.json
-  trackerFile: tracker.json
-
-  # Set this to true if you want to maintain the Nadi log after sending them. Default is false.
-  persistent: false
-
-  # Set maximum tries to send over the logs. Default is 3 times.
-  maxTries: 3
-
-  # Set maximum time before timeout. Default is 1 minute.
-  timeout: 1m
+[program:shipper-app2]
+process_name=%(program_name)s
+command=/usr/local/bin/shipper --config=/path/to/shipper/config/nadi-app2.yaml --record
+autostart=true
+autorestart=true
+redirect_stderr=true
+stdout_logfile=/var/log/nadi/nadi-app2.log
+stopwaitsecs=3600
 ```
