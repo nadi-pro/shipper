@@ -35,10 +35,10 @@ Duplicate [nadi.reference.yaml](nadi.reference.yaml) to `nadi.yaml` and update t
 Then you can test the connection to Nadi:
 
 ```bash
-$ shipper --test
+shipper --test
 ```
 
-In case of monitoring multiple applications, you need to create custom `nadi.yaml` for each of the application.
+In case of monitoring multiple applications in one server, you will need to create custom `nadi.yaml` for each of the application.
 
 By default, Nadi Shipper will run as a service.
 
