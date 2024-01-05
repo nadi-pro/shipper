@@ -9,7 +9,7 @@
 
 nadi:
   # Nadi API Endpoint
-  endpoint: http://nadi.pro/api/
+  endpoint: https://nadi.pro/api/
 
   # Accept Header
   accept: application/vnd.nadi.v1+json
